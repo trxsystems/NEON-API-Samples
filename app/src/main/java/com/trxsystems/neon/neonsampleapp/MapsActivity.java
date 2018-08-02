@@ -38,6 +38,8 @@ import com.google.maps.android.PolyUtil;
 import com.trx.neon.api.neon.Neon;
 import com.trx.neon.api.neon.model.NeonLocation;
 import com.trx.neon.api.neon.model.events.AuthenticationEvent;
+import com.trx.neon.api.neon.model.events.BindingEvent;
+import com.trx.neon.api.neon.model.events.MandatoryUpdateAvailableEvent;
 import com.trx.neon.api.neon.model.interfaces.INeonEvent;
 import com.trx.neon.api.neon.model.interfaces.INeonEventListener;
 import com.trx.neon.api.neon.model.interfaces.INeonLocationListener;
@@ -63,8 +65,8 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
 
     private GoogleMap mMap;
     private boolean isConnected = false;
-    private static int LOGIN_ACTIVITY_REQUEST_CODE = 1001;
-    private static int UPGRADE_ACTIVITY_REQUEST_CODE = 1002;
+    private final int LOGIN_ACTIVITY_REQUEST_CODE = 1001;
+    private final int UPGRADE_ACTIVITY_REQUEST_CODE = 1002;
     private boolean isCorrectingLocation = false;
 
     public  MenuItem settingsMenu;
@@ -440,6 +442,17 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
     public void onEvent(NeonEventType neonEventType, INeonEvent iNeonEvent) {
         switch(neonEventType)
         {
+            case BINDING:
+                BindingEvent be = (BindingEvent)iNeonEvent;
+                switch(be.isBound)
+                {
+                    case FATAL_DISCONNECT:
+                        shutdown();
+                        finish();
+                        break;
+                    default:break;
+                }
+                break;
             case AUTHENTICATION:
                 AuthenticationEvent ae = (AuthenticationEvent)iNeonEvent;
                 if (ae.getType() == null)
@@ -456,6 +469,17 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
                         mainHandler.post(loadBuildingsRunnable);
                         break;
                     default: break;
+                }
+                break;
+            case MANDATORY_UPDATE_AVAILABLE:
+                MandatoryUpdateAvailableEvent muae = (MandatoryUpdateAvailableEvent)iNeonEvent;
+                if(muae.getType() == null)
+                    break;
+                switch(muae.getType())
+                {
+                    case APPLICATION: Neon.upgradeNeonLocationServices(MapsActivity.this, UPGRADE_ACTIVITY_REQUEST_CODE, true); break;
+                    case FIRMWARE: Neon.upgradeDeviceFirmware(MapsActivity.this, UPGRADE_ACTIVITY_REQUEST_CODE, true); break;
+                    default:break;
                 }
                 break;
             default: break;
