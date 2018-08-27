@@ -4,5 +4,5 @@
     <string name="user_correction_title">User Correct</string>
     <string name="user_confirm_title">Confirm</string>
     <string name="user_cancel_title">Cancel</string>
-    <string name="google_maps_key" templateMergeStrategy="preserve" translatable="false">INSERT_YOUR_API_KEY_HERE</string>
+    <string name="google_maps_key" templateMergeStrategy="preserve" translatable="false"><INSERT_YOUR_GOOGLE_MAPS_API_KEY_HERE></string>
 </resources>
