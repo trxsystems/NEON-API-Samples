@@ -7,22 +7,12 @@
 
     <fragment xmlns:android="http://schemas.android.com/apk/res/android"
         xmlns:tools="http://schemas.android.com/tools"
-        xmlns:map="http://schemas.android.com/apk/res-auto"
+        android:id="@+id/map"
+        android:name="com.google.android.gms.maps.SupportMapFragment"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:id="@+id/map"
         tools:context="com.trxsystems.neon.neonsampleapp.MapsActivity"
-        android:name="com.google.android.gms.maps.SupportMapFragment"/>
-
-    <android.support.design.widget.FloatingActionButton
-        android:id="@+id/map_fab"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_gravity="bottom|end"
-        android:layout_margin="10dp"
-        android:src="@drawable/ic_location_fixed"
-        app:backgroundTint="@android:color/background_light"
-        app:fabSize="normal" />
+        tools:ignore="MissingRegistered"/>
 
     <ImageView
         android:id="@+id/image_user_correct"
@@ -36,5 +26,100 @@
         android:scaleType="fitXY"
         android:src="@drawable/ic_marker"
         android:visibility="invisible" />
+
+    <LinearLayout
+        android:id="@+id/route_bottom_sheet"
+        android:layout_width="match_parent"
+        android:layout_height="@dimen/navigation_bar_height"
+        android:orientation="horizontal"
+        android:paddingRight="5dp"
+        android:paddingLeft="5dp"
+        android:background="#ffffff"
+        app:layout_behavior="@string/bottom_sheet_behavior">
+
+        <ImageView
+            android:id="@+id/route_stop"
+            android:layout_width="wrap_content"
+            android:layout_height="match_parent"
+            android:src="@drawable/ic_close"/>
+
+        <View
+            android:id="@+id/route_seperator"
+            android:layout_width="1dp"
+            android:layout_height="match_parent"
+            android:layout_marginStart="10dp"
+            android:layout_marginEnd="5dp"
+            android:layout_marginTop="15dp"
+            android:layout_marginBottom="15dp"
+            android:background="#7f7f7f"/>
+
+        <ImageView
+            android:id="@+id/route_image"
+            android:layout_width="40dp"
+            android:layout_height="match_parent"
+            android:scaleType="fitCenter"
+            android:src="@drawable/ic_navigation"
+            android:tint="#2767e8"/>
+
+        <TextView
+            android:layout_weight="3"
+            android:id="@+id/route_instructions"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:padding="5dp"
+            android:textColor="#000000"
+            android:textSize="16sp"
+            android:gravity="center_vertical"
+            android:text="Directions and Instructions"/>
+
+        <Button
+            android:id="@+id/route_contextual"
+            android:layout_weight="1"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:text="Navigate"
+            android:textColor="#ffffff"
+            android:background="#2767e8"
+            android:layout_gravity="bottom"/>
+    </LinearLayout>
+
+    <FrameLayout
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        app:layout_anchor="@id/centerButton"
+        app:layout_anchorGravity="top|end">
+
+        <android.support.design.widget.FloatingActionButton
+            android:id="@+id/acceptButton"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            app:backgroundTint="#00cc0e"
+            android:layout_marginRight="10dp"
+            android:layout_marginBottom="100dp"
+            android:src="@drawable/ic_check"
+            android:visibility="gone"
+            />
+
+        <android.support.design.widget.FloatingActionButton
+            android:id="@+id/checkInButton"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginRight="10dp"
+            android:layout_marginBottom="100dp"
+            android:src="@drawable/ic_person_pin_circle_black"
+            app:backgroundTint="#ffffff" />
+
+    </FrameLayout>
+
+    <android.support.design.widget.FloatingActionButton
+        android:id="@+id/centerButton"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        app:layout_anchorGravity="top|end"
+        android:layout_margin="10dp"
+        android:src="@drawable/ic_location_fixed"
+        app:backgroundTint="@android:color/background_light"
+        app:fabSize="normal"
+        app:layout_anchor="@id/route_bottom_sheet"/>
 
 </android.support.design.widget.CoordinatorLayout>

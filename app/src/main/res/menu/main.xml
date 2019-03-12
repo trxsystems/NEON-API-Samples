@@ -8,24 +8,34 @@
         android:enabled="true"
         android:icon="@android:drawable/ic_menu_preferences"
         android:orderInCategory="100"
-        android:title="Settings"
+        android:title="@string/settings_title"
         android:visible="true" />
 
     <item
-        android:id="@+id/action_user_correction_cancel"
+        android:id="@+id/action_sync"
         android:checkable="false"
         android:enabled="true"
+        android:icon="@android:drawable/ic_menu_preferences"
         android:orderInCategory="100"
-        android:title="@string/user_cancel_title"
-        android:visible="false"
-        app:showAsAction="ifRoom|withText" />
+        android:title="@string/sync_title"
+        android:visible="true" />
 
     <item
-        android:id="@+id/action_user_correction"
+        android:id="@+id/action_route_settings"
         android:checkable="false"
         android:enabled="true"
+        android:icon="@android:drawable/ic_menu_preferences"
         android:orderInCategory="100"
-        android:title="@string/user_correction_title"
-        android:visible="true"
-        app:showAsAction="ifRoom|withText" />
+        android:title="@string/route_settings_title"
+        android:visible="true" />
+
+    <item
+        android:id="@+id/action_route_destination"
+        android:checkable="false"
+        android:enabled="true"
+        android:icon="@android:drawable/ic_menu_preferences"
+        android:orderInCategory="100"
+        android:title="@string/route_destination_title"
+        android:visible="true" />
+
 </menu>

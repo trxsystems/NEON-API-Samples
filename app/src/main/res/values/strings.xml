@@ -1,8 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">NEONSampleApp</string>
-    <string name="title_activity_maps">Map</string>
+
+    <string name="app_name">NEON API Sample</string>
     <string name="user_correction_title">User Correct</string>
-    <string name="user_confirm_title">Confirm</string>
+    <string name="confirm_location">Confirm</string>
     <string name="user_cancel_title">Cancel</string>
-    <string name="google_maps_key" templateMergeStrategy="preserve" translatable="false"><INSERT_YOUR_GOOGLE_MAPS_API_KEY_HERE></string>
+    <string name="settings_title">Settings</string>
+    <string name="route_destination_title">Route To Destination</string>
+    <string name="sync_title">Sync</string>
+    <string name="route_settings_title">Route Filters</string>
+
+
 </resources>
+
