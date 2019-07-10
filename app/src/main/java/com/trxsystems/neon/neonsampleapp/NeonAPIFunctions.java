@@ -10,6 +10,7 @@ import com.google.android.gms.maps.model.LatLng;
 import com.trx.neon.api.neon.Neon;
 import com.trx.neon.api.neon.model.NeonLocation;
 import com.trx.neon.api.neon.model.events.AuthenticationEvent;
+import com.trx.neon.api.neon.model.events.BindingEvent;
 import com.trx.neon.api.neon.model.events.MandatoryUpdateAvailableEvent;
 import com.trx.neon.api.neon.model.interfaces.INeonEvent;
 import com.trx.neon.api.neon.model.interfaces.INeonEventListener;
@@ -56,7 +57,7 @@ public class NeonAPIFunctions implements INeonLocationListener, INeonEventListen
     }
 
     /**
-     * Disconnects from the NEON API and unregisters location and events
+     * Disconnects from the NEON API
      */
     void stopLocationService() {
         if (Neon.isBound())
@@ -112,6 +113,19 @@ public class NeonAPIFunctions implements INeonLocationListener, INeonEventListen
     public void onEvent(NeonEventType neonEventType, INeonEvent iNeonEvent) {
         switch(neonEventType)
         {
+            case BINDING:
+                BindingEvent be = (BindingEvent)iNeonEvent;
+                if(be.isBound == null)
+                    break;
+                switch(be.isBound)
+                {
+                    case CONNECT:
+                        if(!Neon.hasTrackingUnit())
+                            Neon.startTrackingUnitActivityForResult(mapsActivity, MapsActivity.TRACKING_UNIT_REQUEST_CODE);
+                        break;
+                    default:break;
+                }
+                break;
             case AUTHENTICATION:
                 AuthenticationEvent ae = (AuthenticationEvent)iNeonEvent;
                 if (ae.getType() == null)
@@ -132,12 +146,8 @@ public class NeonAPIFunctions implements INeonLocationListener, INeonEventListen
                 MandatoryUpdateAvailableEvent muae = (MandatoryUpdateAvailableEvent)iNeonEvent;
                 if(muae.getType() == null)
                     break;
-                switch(muae.getType())
-                {
-                    case APPLICATION: Neon.upgradeNeonLocationServices(mapsActivity, MapsActivity.UPGRADE_ACTIVITY_REQUEST_CODE, true); break;
-                    case FIRMWARE: Neon.upgradeDeviceFirmware(mapsActivity, MapsActivity.UPGRADE_ACTIVITY_REQUEST_CODE, true); break;
-                    default:break;
-                }
+                if(muae.getType() == MandatoryUpdateAvailableEvent.MandatoryUpdateAvailableEventType.APPLICATION)
+                    Neon.upgradeNeonLocationServices(mapsActivity, MapsActivity.UPGRADE_ACTIVITY_REQUEST_CODE, true);
                 break;
             default: break;
         }

@@ -24,6 +24,8 @@ import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.Polygon;
 import com.trx.neon.api.neon.Neon;
 import com.trx.neon.api.neon.model.NeonLocation;
+import com.trx.neon.api.neonConstraint.NeonConstraint;
+import com.trx.neon.api.neonConstraint.model.ElevationInfo;
 import com.trx.neon.api.neonEnvironment.NeonEnvironment;
 import com.trx.neon.api.neonEnvironment.model.LatLong;
 import com.trx.neon.api.neonEnvironment.model.LatLongRect;
@@ -36,6 +38,7 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
     public static final int UPGRADE_ACTIVITY_REQUEST_CODE = 1002;
     public static final int PERMISSION_ACTIVITY_REQUEST_CODE = 1003;
     public static final int REQUEST_PERMISSIONS_GOOGLE_CODE = 1004;
+    public static final int TRACKING_UNIT_REQUEST_CODE = 1005;
 
     private static final String LOG_TAG = "MapsActivity";
 
@@ -103,7 +106,7 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
                     LatLng target = new LatLng(googleMap.getCameraPosition().target.latitude, googleMap.getCameraPosition().target.longitude);
 
                     if(!neonEnvironmentAPIFunctions.makeBuildingAndFloorCorrection(target))
-                        Neon.addConstraint(target.latitude, target.longitude, 1.0f);
+                        NeonConstraint.addUserCheckin(System.currentTimeMillis(), target.latitude, target.longitude, 1.0f, ElevationInfo.None());
                 }
             }
         });
@@ -223,6 +226,19 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
                     case Activity.RESULT_OK:
                         Log.i(LOG_TAG, "permission information was successfully entered");
                         neonAPIFunctions.startLocationService();
+                        break;
+                    default:
+                        break;
+                }
+                break;
+            case TRACKING_UNIT_REQUEST_CODE:
+                switch (resultCode) {
+                    case Activity.RESULT_CANCELED:
+                        Log.i(LOG_TAG, "tracking unit was not selected");
+                        neonAPIFunctions.stopLocationService();
+                        finish();
+                    case Activity.RESULT_OK:
+                        Log.i(LOG_TAG, "tracking unit was selected");
                         break;
                     default:
                         break;

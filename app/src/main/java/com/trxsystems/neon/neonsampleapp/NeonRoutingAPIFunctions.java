@@ -336,7 +336,7 @@ public class NeonRoutingAPIFunctions implements INeonRouteDestinationListener, I
     }
 
     @Override
-    public void update(final String nextInstruction, final RouteInstructionType instructionType, final String nextNodeID, RouteState routeState, Route route, List<NeonRouteDestination> list, int i, int i1) {
+    public void update(final String nextInstruction, final RouteInstructionType instructionType, final String nextNodeID, int metersToNextNode, RouteState routeState, Route route, List<NeonRouteDestination> list, int i, int i1) {
         if (bottomSheetState != BottomSheetState.IN_PROGRESS)
             return;
 
@@ -1082,7 +1082,11 @@ public class NeonRoutingAPIFunctions implements INeonRouteDestinationListener, I
 
     void displayRouteSettings()
     {
-        ArrayList<RouteFilter> routeFilters = new ArrayList<>(Arrays.asList(RouteFilter.values()));
+        ArrayList<RouteFilter> routeFilters = new ArrayList<>(NeonRouting.getRouteFilters());
+
+        final HashMap<Integer, RouteFilter> routeFilterMap = new HashMap<>();
+        for(RouteFilter rf : routeFilters)
+            routeFilterMap.put(rf.getFilterIndex(), rf);
 
         LinearLayout filterHolder = new LinearLayout(mapsActivity);
         filterHolder.setOrientation(LinearLayout.VERTICAL);
@@ -1092,6 +1096,7 @@ public class NeonRoutingAPIFunctions implements INeonRouteDestinationListener, I
         for (RouteFilter routeFilter : routeFilters) {
             final CheckBox newCheckBox = new CheckBox(mapsActivity);
             newCheckBox.setText(routeFilter.getFriendlyName());
+            newCheckBox.setId(routeFilter.getFilterIndex());
             newCheckBox.setLayoutParams(filterParams);
             newCheckBox.setChecked(currentRouteFilters.contains(routeFilter));
             filterHolder.addView(newCheckBox);
@@ -1108,7 +1113,7 @@ public class NeonRoutingAPIFunctions implements INeonRouteDestinationListener, I
                         currentRouteFilters.clear();
                         for (CheckBox checkBox : checkBoxes)
                             if (checkBox.isChecked())
-                                currentRouteFilters.add(RouteFilter.get(checkBox.getText().toString()));
+                                currentRouteFilters.add(routeFilterMap.get(checkBox.getId()));
                     }
                 })
                 .setNegativeButton("Cancel", null);

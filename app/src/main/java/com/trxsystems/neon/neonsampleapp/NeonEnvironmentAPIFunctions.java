@@ -22,6 +22,8 @@ import com.google.android.gms.maps.model.Polygon;
 import com.google.android.gms.maps.model.PolygonOptions;
 import com.google.maps.android.PolyUtil;
 import com.trx.neon.api.neon.model.NeonLocation;
+import com.trx.neon.api.neonConstraint.NeonConstraint;
+import com.trx.neon.api.neonConstraint.model.ElevationInfo;
 import com.trx.neon.api.neonEnvironment.NeonEnvironment;
 import com.trx.neon.api.neonEnvironment.model.DownloadOptions;
 import com.trx.neon.api.neonEnvironment.model.DownloadResult;
@@ -136,7 +138,7 @@ public class NeonEnvironmentAPIFunctions implements INeonBuildingListener, INeon
 
         if(floor != null && buildingID != null)
         {
-            NeonEnvironment.addBuildingConstraint(target.latitude, target.longitude, 1.0f, buildingID, floor);
+            NeonConstraint.addUserCheckin(System.currentTimeMillis(), target.latitude, target.longitude, 1.0f, ElevationInfo.OnFloor(buildingID, floor));
             return true;
         }
 
