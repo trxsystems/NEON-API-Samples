@@ -32,8 +32,14 @@ import com.trx.neon.api.neonEnvironment.model.LatLongRect;
 
 import java.util.UUID;
 
+/**
+ * NEON Sample App
+ * Main Entry point for displaying a Google Map and using NEON APIs to display location,
+ * draw environment data, and route to a destination
+ */
 public class MapsActivity extends AppCompatActivity implements OnMapReadyCallback, LocationSource {
 
+    //request codes for responding to UI actions through the API
     public static final int LOGIN_ACTIVITY_REQUEST_CODE = 1001;
     public static final int UPGRADE_ACTIVITY_REQUEST_CODE = 1002;
     public static final int PERMISSION_ACTIVITY_REQUEST_CODE = 1003;
@@ -42,9 +48,11 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
 
     private static final String LOG_TAG = "MapsActivity";
 
+    //the actual google map object and a listener that can be used to display locations on it
     private GoogleMap googleMap;
     public LocationSource.OnLocationChangedListener locationListener;
 
+    //menu and screen elements
     public MenuItem settingsMenu;
 
     public boolean isCorrectingLocation = false;
@@ -54,6 +62,7 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
     public FloatingActionButton checkInButton;
     public FloatingActionButton acceptButton;
 
+    //helper classes that exercise a particular API
     NeonAPIFunctions neonAPIFunctions;
     NeonEnvironmentAPIFunctions neonEnvironmentAPIFunctions;
     NeonRoutingAPIFunctions neonRoutingAPIFunctions;
@@ -69,6 +78,7 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
             getSupportActionBar().show();
         }
 
+        //centers the map on the user's location
         centerOnLocationButton = findViewById(R.id.centerButton);
         centerOnLocationButton.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -81,6 +91,7 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
             }
         });
 
+        //allows user to specify where they are on the map
         checkInButton = findViewById(R.id.checkInButton);
         checkInButton.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -95,6 +106,7 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
             }
         });
 
+        //accepts the center location of the screen as the position for the check-in
         acceptButton = findViewById(R.id.acceptButton);
         acceptButton.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -102,9 +114,13 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
                 if(isCorrectingLocation)
                 {
                     cancelUserCorrection();
-                    //get latitude and longitude of correction
+
+                    //get latitude and longitude of center of the screen
                     LatLng target = new LatLng(googleMap.getCameraPosition().target.latitude, googleMap.getCameraPosition().target.longitude);
 
+                    //check if the check-in is inside a building and on a floor
+                    //if it is, apply a building and floor constraint
+                    //otherwise, apply a user check-in at that location
                     if(!neonEnvironmentAPIFunctions.makeBuildingAndFloorCorrection(target))
                         NeonConstraint.addUserCheckin(System.currentTimeMillis(), target.latitude, target.longitude, 1.0f, ElevationInfo.None());
                 }
@@ -131,6 +147,7 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
         neonEnvironmentAPIFunctions.onResume();
         neonRoutingAPIFunctions.onResume();
     }
+
 
     @Override
     protected void onPause() {
@@ -160,27 +177,26 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
         int id = item.getItemId();
 
         switch (id) {
-            case R.id.action_settings:
+            case R.id.action_settings:  //bring up the NEON Location Service Settings Page
                 Intent settingsIntent = new Intent(Neon.ACTIVITY_SETTINGS);
                 startActivity(settingsIntent);
                 return true;
 
-            case R.id.action_route_destination: {
+            case R.id.action_route_destination: {   //Bring up a list of route destinations
                 neonRoutingAPIFunctions.displayRouteDestinations();
                 break;
             }
-            case R.id.action_route_settings: {
+            case R.id.action_route_settings: {      //Bring up a list of possible route filters
                 neonRoutingAPIFunctions.displayRouteSettings();
                 break;
             }
-            case R.id.action_sync: {
+            case R.id.action_sync: {          //sync the environment (re-download an updated set of data
 
                 final LatLngBounds viewingRect = googleMap.getProjection().getVisibleRegion().latLngBounds;
                 final LatLongRect bounds = new LatLongRect(new LatLong(viewingRect.southwest.latitude, viewingRect.southwest.longitude), new LatLong(viewingRect.northeast.latitude, viewingRect.northeast.longitude));
 
                 NeonEnvironment.syncEnvironment(bounds);
                 clearMapData();
-
                 break;
             }
         }
@@ -188,6 +204,9 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
         return super.onOptionsItemSelected(item);
     }
 
+    /**
+     * Handle request codes from the NEON API
+     */
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         switch (requestCode) {
@@ -247,6 +266,9 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
         }
     }
 
+    /**
+     * Handle request codes from the Google Maps API
+     */
     @Override
     public void onRequestPermissionsResult(int requestCode, @NonNull String permissions[], @NonNull int[] grantResults) {
         switch (requestCode) {
@@ -257,6 +279,8 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
                     if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
                         return;
                     }
+
+                    //if we have a map, enable location and make the map accessible to the API functions
                     googleMap.setMyLocationEnabled(true);
                     neonAPIFunctions.setBaseMap(googleMap);
                     neonEnvironmentAPIFunctions.setBaseMap(googleMap);
@@ -271,12 +295,12 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
 
     @Override
     public void onBackPressed() {
-        if (isCorrectingLocation)
+        if (isCorrectingLocation)   //if currently correctly location, exit that
         {
             cancelUserCorrection();
             return;
         }
-        if(neonRoutingAPIFunctions.checkRouting())
+        if(neonRoutingAPIFunctions.checkRouting())  //if currently routing, stop routing
             return;
 
         shutdown();
@@ -286,8 +310,6 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
     /**
      * Manipulates the map once available.
      * This callback is triggered when the map is ready to be used.
-     * This is where we can add markers or lines, add listeners or move the camera. In this case,
-     * we just add a marker near Sydney, Australia.
      * If Google Play services is not installed on the device, the user will be prompted to install
      * it inside the SupportMapFragment. This method will only be triggered once the user has
      * installed Google Play services and returned to the app.
@@ -330,6 +352,9 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
         });
     }
 
+    /**
+     * Handle clicks to polygons on the map, such as floorplans or regions of interest
+     */
     private GoogleMap.OnPolygonClickListener onPolygonClickListener = new GoogleMap.OnPolygonClickListener() {
         @Override
         public void onPolygonClick(final Polygon polygon) {
@@ -339,6 +364,9 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
         }
     };
 
+    /**
+     * Handle clicks to markers on the map, such as points of interest
+     */
     private GoogleMap.OnMarkerClickListener onMarkerClickListener = new GoogleMap.OnMarkerClickListener() {
         @Override
         public boolean onMarkerClick(Marker marker)
@@ -359,6 +387,11 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
         locationListener = null;
     }
 
+    /**
+     * Centers on the users location
+     * Selects a floor if in a building
+     * Orients the screen to the next route node if routing
+     */
     public void onLocationChanged(NeonLocation location)
     {
         if(locationListener != null)
@@ -372,12 +405,18 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
         }
     }
 
+    /**
+     * Begins loading environment data around the user's location
+     */
     public void startLoadingMapData()
     {
         neonEnvironmentAPIFunctions.startLoadingBuildings();
         neonRoutingAPIFunctions.startLoadingRouteDestinations();
     }
 
+    /**
+     * Clears the map data from the google map
+     */
     public void clearMapData()
     {
         neonEnvironmentAPIFunctions.clearMapData();
@@ -396,6 +435,9 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
         findViewById(R.id.image_user_correct).setVisibility(View.GONE);
     }
 
+    /**
+     * Draws a building floor and any objects on that floor into the google map
+     */
     public void drawFloor(final UUID buildingID, final int floor)
     {
         runOnUiThread(new Runnable()

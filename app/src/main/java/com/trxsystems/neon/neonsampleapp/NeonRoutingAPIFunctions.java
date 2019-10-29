@@ -65,6 +65,13 @@ import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 
+/**
+ * NEON Routing API Functions
+ * Exercises the functions in the Neon Routing API
+ * downloads route destinations for display, and allows user to retrieve a route
+ * from their current location to a route destination and start turn-by-turn directions
+ * on that route
+ */
 public class NeonRoutingAPIFunctions implements INeonRouteDestinationListener, INeonRouteListener, INeonTurnByTurnListener {
 
     private static final String LOG_TAG = "NeonRoutingAPI";
@@ -85,9 +92,10 @@ public class NeonRoutingAPIFunctions implements INeonRouteDestinationListener, I
     //data that is currently drawn to the map for each building ID
     private ConcurrentHashMap<UUID, FloorOverlay> buildingOverlays = new ConcurrentHashMap<>();
 
-    private AlertDialog routeDestinationDialog;
     private Route currentRoute = null;
-    //Navigation sheet view for displaying directions to point of interest
+
+    //Routing UI Elements
+    private AlertDialog routeDestinationDialog;
     private BottomSheetBehavior bottomSheetBehavior;
     private TextView routeInstructions;
     private Button contextualButton;
@@ -96,7 +104,25 @@ public class NeonRoutingAPIFunctions implements INeonRouteDestinationListener, I
     private ImageView directionView;
     private BottomSheetState bottomSheetState;
 
+    //speak instructions
     private TextToSpeech tts;
+
+    //route filters checked in settings
+    private ArrayList<RouteFilter> currentRouteFilters = new ArrayList<>();
+
+    /**
+     * An enum that keeps track of the app's routing state
+     */
+    private enum BottomSheetState {
+        NO_ROUTE,
+        READY,
+        IN_PROGRESS,
+        COMPLETED
+    }
+
+    private RouteNode currentNodeDestination;
+    private Circle currentlyDrawnNode;
+    private ValueAnimator circleAnimation;
 
     /**
      * An object that keeps track of what is drawn to the map for each building floor
@@ -142,8 +168,8 @@ public class NeonRoutingAPIFunctions implements INeonRouteDestinationListener, I
 
         UUID buildingID;
         int floor;
-        CopyOnWriteArrayList<NeonRouteDestination> routeDestinations;
-        CopyOnWriteArrayList<ArrayList<RouteNode>> routes;
+        CopyOnWriteArrayList<NeonRouteDestination> routeDestinations;   //route destinations
+        CopyOnWriteArrayList<ArrayList<RouteNode>> routes;              //active routes
 
         FloorData(UUID buildingID, int floor)
         {
@@ -154,6 +180,9 @@ public class NeonRoutingAPIFunctions implements INeonRouteDestinationListener, I
         }
     }
 
+    /**
+     * Keeps track of a building and floor combination
+     */
     private class BuildingAndFloor {
         UUID buildingID;   //current building being displayed
         int floor;         //current floor being displayed
@@ -179,7 +208,9 @@ public class NeonRoutingAPIFunctions implements INeonRouteDestinationListener, I
     }
 
     NeonRoutingAPIFunctions(MapsActivity mapsActivity) {
+
         this.mapsActivity = mapsActivity;
+
         tts = new TextToSpeech(this.mapsActivity.getApplicationContext(), new TextToSpeech.OnInitListener() {
             @Override
             public void onInit(int i) {
@@ -187,6 +218,7 @@ public class NeonRoutingAPIFunctions implements INeonRouteDestinationListener, I
             }
         });
 
+        //setting up UI elements for turn-by-turn instructions
         separator = mapsActivity.findViewById(R.id.route_seperator);
         directionView = mapsActivity.findViewById(R.id.route_image);
 
@@ -203,7 +235,7 @@ public class NeonRoutingAPIFunctions implements INeonRouteDestinationListener, I
         /*
          * Create a new background thread, call Looper.prepare() so it
          * can handle posts, and grab a dataHandler for loading
-         * buildings and floor plan images
+         * route destinations
          */
         Thread t = new Thread(new Runnable() {
             public void run() {
@@ -221,21 +253,7 @@ public class NeonRoutingAPIFunctions implements INeonRouteDestinationListener, I
         this.baseMap = baseMap;
     }
 
-    /**
-     * An enum that keeps track of the app's routing state
-     * An enum that keeps track of the app's routing state
-     */
-    private enum BottomSheetState {
-        NO_ROUTE,
-        READY,
-        IN_PROGRESS,
-        COMPLETED
-    }
-
-    private RouteNode currentNodeDestination;
-    private Circle currentlyDrawnNode;
-    private ValueAnimator circleAnimation;
-
+    //the next node in the route graph blinks to indicate the next step
     private ValueAnimator makeCircleAnimation() {
         ValueAnimator valueAnimator = new ValueAnimator();
         valueAnimator.setRepeatCount(ValueAnimator.INFINITE);
@@ -257,8 +275,15 @@ public class NeonRoutingAPIFunctions implements INeonRouteDestinationListener, I
         return valueAnimator;
     }
 
-    private ArrayList<RouteFilter> currentRouteFilters = new ArrayList<>();
 
+    /**
+     * Returns a list of routing destinations after calling NeonRouting.downloadRouteDestinationsInArea()
+     * These destinations are cached in a map of building floor data so they can be displayed when the
+     * user selects a floor to view
+     *
+     * Route destinations can include a point of interest (marker on google map) or a region of interest
+     * (polygon on google map)
+     */
     @Override
     public void onComplete(final List<NeonRouteDestination> routeDestinations)
     {
@@ -279,6 +304,7 @@ public class NeonRoutingAPIFunctions implements INeonRouteDestinationListener, I
                 buildingFloorData.get(baf).routeDestinations.add(nrd);
                 routeDestinationHashMap.put(nrd.ID.toString(), nrd);
 
+                //draw contents to floor if it is currently being displayed
                 if(buildingOverlays.containsKey(nrd.BuildingID) && buildingOverlays.get(nrd.BuildingID).floor == nrd.FloorNumber)
                 {
                     final UUID buildingID = nrd.BuildingID;
@@ -295,6 +321,11 @@ public class NeonRoutingAPIFunctions implements INeonRouteDestinationListener, I
         }
     }
 
+    /**
+     * Returns a route after calling NeonRouting.routeToDestination() or NeonRouting.routeToCategory()
+     * If the function returns SUCCESS, then a route is available and is displayed on the screen
+     * as a preview. The user can then select START to begin turn-by-turn directions
+     */
     @Override
     public void onComplete(final Route route, RoutingResult routingResult) {
 
@@ -318,7 +349,6 @@ public class NeonRoutingAPIFunctions implements INeonRouteDestinationListener, I
                             filterString = "    -   Avoids " + sb.toString();
                         }
 
-
                         setNavSheet("Route available for: " + route.Destination + "  -    " + route.MinutesToDestination + (route.MinutesToDestination > 1 ? " mins (" + route.MetersToDestination + " m)" : " min (" + route.MetersToDestination + " m)") + filterString, null, null);
                         cleanupMap();
                         currentRoute = route;
@@ -335,6 +365,20 @@ public class NeonRoutingAPIFunctions implements INeonRouteDestinationListener, I
         }
     }
 
+    /**
+     * Turn-by-turn direction update based on the selected route and the user's current position
+     * Update is called every second
+     *
+     * nextInstruction : The current action for the user to take
+     * instructionType : The type of action, such as a left turn, that corresponds to an icon
+     * nextNodeID : The id of the route node in the route that is upcoming
+     * metersToNextNode : The distance to the next node in meters
+     * routeState : current state of the route, such as IN_PROGRESS or FINISHED
+     * route : if the route is updated, this will provide the new route, otherwise it is null
+     * nearbyDestinations : Gives the nearby route destinations from the user's current route
+     * metersToDestination : meters until the destination is reached
+     * minutesToDestination : minutes until the destinaton is reached
+     */
     @Override
     public void update(final String nextInstruction, final RouteInstructionType instructionType, final String nextNodeID, int metersToNextNode, RouteState routeState, Route route, List<NeonRouteDestination> list, int i, int i1) {
         if (bottomSheetState != BottomSheetState.IN_PROGRESS)
@@ -356,12 +400,12 @@ public class NeonRoutingAPIFunctions implements INeonRouteDestinationListener, I
         });
     }
 
+    /**
+     * If the user clicks on a route destination, a dialog will ask if they want to route to that
+     * destination. If yes, we will attempt to retrieve a route to the destination from the current location
+     */
     boolean onMarkerClick(Marker marker)
     {
-        //Each polygon outline on the screen has a tag with the building ID.  We use the
-        //building ID to retrieve the list of outlines and images drawn to the screen.
-        //We will clear these outlines and draw a new one if the floor changes
-
         //The selected building
         final UUID markerID = (UUID) marker.getTag();
 
@@ -394,10 +438,8 @@ public class NeonRoutingAPIFunctions implements INeonRouteDestinationListener, I
     }
 
     /**
-     * onPolygonClickListener is called when you tap a building outline on the screen.
-     * It will pop up a dialog that allows you to select another floor.  If another
-     * floor is selected, it will clear the existing outline and floor plan image, and
-     * draw a the new outline and download the floor plan image, if there is one.
+     * If the user taps on a region of interest polygon, a dialog will ask if they want to route to that
+     * destination. If yes, we will attempt to retrieve a route to the destination from the current location
      */
     void onPolygonClick(final Polygon polygon)
     {
@@ -449,7 +491,6 @@ public class NeonRoutingAPIFunctions implements INeonRouteDestinationListener, I
         if (node == null)
             return;
 
-
         LatLng center = new LatLng(node.Latitude, node.Longitude);
 
         //only draw if the node is not the same as the one we already drew
@@ -462,8 +503,10 @@ public class NeonRoutingAPIFunctions implements INeonRouteDestinationListener, I
         currentlyDrawnNode = baseMap.addCircle(new CircleOptions().clickable(false).strokeWidth(0).radius(.5).fillColor(Color.RED).center(center).zIndex(2));
     }
 
-    //draws the routing shapes and routes if they need to be drawn
-    //starts animation for your current route node
+    /**
+     * draws the routing shapes and routes if they need to be drawn
+     * starts animation for your current route node
+     */
 
     private void drawRouteNode()
     {
@@ -476,6 +519,9 @@ public class NeonRoutingAPIFunctions implements INeonRouteDestinationListener, I
         }
     }
 
+    /**
+     * Clears current route info from the screen
+     */
     private void clearRoute()
     {
         Route routeToClear = currentRoute;
@@ -532,6 +578,9 @@ public class NeonRoutingAPIFunctions implements INeonRouteDestinationListener, I
         }
     }
 
+    /**
+     * Draws a retrieved route to the screen
+     */
     private void drawRoute()
     {
         if(currentRoute != null && currentRoute.Nodes.size()>0)
@@ -606,8 +655,9 @@ public class NeonRoutingAPIFunctions implements INeonRouteDestinationListener, I
         }
     }
 
-
-    //sets the bottoms sheet
+    /**
+     * sets the bottoms sheet display for turn-by-turn
+     */
     private void setNavSheet(String instructions, RouteInstructionType type, RouteNode node)
     {
         View.OnClickListener stopRouteClick = new View.OnClickListener()
@@ -853,12 +903,9 @@ public class NeonRoutingAPIFunctions implements INeonRouteDestinationListener, I
 
     /**
      * Every five seconds, this runnable will get the area in view on the screen
-     * and issue a request to download all the buildings for that area.
-     * The work will be performed on the dataHandler, which points to a background thread.
-     * Results will be returned on the buildingCallback, where they will be drawn to the screen
-     * Because the DownloadOption is CACHED, the first request to download buildings in this
-     * area will take longer as it has to hit the network, but subsequent calls will be much quicker
-     * since the buildings are already cached in the Neon Location Service.
+     * and issue a request to download all the route destinations for that area
+     * The work will be performed on the mainHandler, which points to a background thread.
+     * Results will be returned to this class where they will be drawn to the screen
      */
     private Runnable loadRouteDestinationsRunnable = new Runnable() {
         @Override
@@ -918,7 +965,7 @@ public class NeonRoutingAPIFunctions implements INeonRouteDestinationListener, I
     }
 
     /**
-     * Draws a NeonFloorOutline to the map.  Converts to
+     * Draws a floor and its contents to the google map.  Converts to
      * a set of Google Polygons
      */
     void drawFloorContents(UUID buildingID, int floorNumber) {
@@ -994,6 +1041,10 @@ public class NeonRoutingAPIFunctions implements INeonRouteDestinationListener, I
         buildingOverlays.put(buildingID, new FloorOverlay(buildingID, floorData.floor, pois, rois, routes));
     }
 
+    /**
+     * Brings up a list of route destinations that can be reached from the user's current location
+     * They can be selected to retrieve a route and start turn-by-turn directions
+     */
     void displayRouteDestinations()
     {
         final ArrayList<NeonRouteDestination> destinations = new ArrayList<>();
@@ -1080,6 +1131,10 @@ public class NeonRoutingAPIFunctions implements INeonRouteDestinationListener, I
         routeDestinationDialog.show();
     }
 
+    /**
+     * Brings up a list of route filters that can filter certain features, such as stairwells,
+     * from the route
+     */
     void displayRouteSettings()
     {
         ArrayList<RouteFilter> routeFilters = new ArrayList<>(NeonRouting.getRouteFilters());
@@ -1121,6 +1176,10 @@ public class NeonRoutingAPIFunctions implements INeonRouteDestinationListener, I
         routeDestinationDialog.show();
     }
 
+    /**
+     * Expandable list by routing categories. The first option is to route to the nearest in that
+     * category, and then each of the specific destinations are listed by distance from current position
+     */
     class ExpandableListAdapter extends BaseExpandableListAdapter {
 
         private Context context;

@@ -17,6 +17,11 @@ import com.trx.neon.api.neon.model.interfaces.INeonEventListener;
 import com.trx.neon.api.neon.model.interfaces.INeonLocationListener;
 import com.trx.neon.api.neon.model.types.NeonEventType;
 
+/**
+ * NEON API Functions
+ * Exercises the functions in the Neon API
+ * starts the service and gets events and locations
+ */
 public class NeonAPIFunctions implements INeonLocationListener, INeonEventListener {
 
     private static final String LOG_TAG = "NeonAPI";
@@ -113,13 +118,13 @@ public class NeonAPIFunctions implements INeonLocationListener, INeonEventListen
     public void onEvent(NeonEventType neonEventType, INeonEvent iNeonEvent) {
         switch(neonEventType)
         {
-            case BINDING:
+            case BINDING:   //NEON service is started
                 BindingEvent be = (BindingEvent)iNeonEvent;
                 if(be.isBound == null)
                     break;
                 switch(be.isBound)
                 {
-                    case CONNECT:
+                    case CONNECT:   //prompt user to select tracking unit if they don't have one selected
                         if(!Neon.hasTrackingUnit())
                             Neon.startTrackingUnitActivityForResult(mapsActivity, MapsActivity.TRACKING_UNIT_REQUEST_CODE);
                         break;
@@ -130,7 +135,7 @@ public class NeonAPIFunctions implements INeonLocationListener, INeonEventListen
                 AuthenticationEvent ae = (AuthenticationEvent)iNeonEvent;
                 if (ae.getType() == null)
                     break;
-                switch (ae.getType())
+                switch (ae.getType())   //handle authentication by starting the login activity or upgrading the service
                 {
                     case NO_CREDENTIALS_SET: Neon.startLoginActivityForResult(MapsActivity.LOGIN_ACTIVITY_REQUEST_CODE, mapsActivity); break;
                     case MANDATORY_UPDATE_REQUIRED: Neon.upgradeNeonLocationServices(mapsActivity, MapsActivity.UPGRADE_ACTIVITY_REQUEST_CODE,true); break;
@@ -142,7 +147,7 @@ public class NeonAPIFunctions implements INeonLocationListener, INeonEventListen
                     default: break;
                 }
                 break;
-            case MANDATORY_UPDATE_AVAILABLE:
+            case MANDATORY_UPDATE_AVAILABLE:    //force upgrade if required
                 MandatoryUpdateAvailableEvent muae = (MandatoryUpdateAvailableEvent)iNeonEvent;
                 if(muae.getType() == null)
                     break;

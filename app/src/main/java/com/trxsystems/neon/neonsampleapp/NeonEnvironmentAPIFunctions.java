@@ -41,6 +41,11 @@ import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
+/**
+ * NEON Environment API Functions
+ * Exercises the functions in the Neon Environment API
+ * downloads buildings and floorplans for display and building check-ins
+ */
 public class NeonEnvironmentAPIFunctions implements INeonBuildingListener, INeonFloorPlanListener {
 
     private static final String LOG_TAG = "NeonEnvironmentAPI";
@@ -136,6 +141,7 @@ public class NeonEnvironmentAPIFunctions implements INeonBuildingListener, INeon
             }
         }
 
+        //applies a constraint to both the 2D location of the check-in as well as the selected building and floor
         if(floor != null && buildingID != null)
         {
             NeonConstraint.addUserCheckin(System.currentTimeMillis(), target.latitude, target.longitude, 1.0f, ElevationInfo.OnFloor(buildingID, floor));
@@ -346,8 +352,6 @@ public class NeonEnvironmentAPIFunctions implements INeonBuildingListener, INeon
             });
         } else Log.i(LOG_TAG, "Failed to get image with error: " + result);
     }
-
-
 
     /**
      * Every five seconds, this runnable will get the area in view on the screen
