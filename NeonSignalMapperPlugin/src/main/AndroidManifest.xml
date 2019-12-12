@@ -1,0 +1,35 @@
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    package="com.trxsystems.gpsplugin">
+
+    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
+    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
+
+    <application
+        android:allowBackup="false"
+        android:icon="@mipmap/ic_launcher"
+        android:label="@string/app_name"
+        android:theme="@style/AppTheme"
+        tools:ignore="GoogleAppIndexingWarning">
+        <activity android:name=".GPSReceiverPlugin">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="com.trx.neonsignalmapper.PLUGIN_APPLICATION"/>
+            </intent-filter>
+        </activity>
+
+        <activity
+            android:name=".SettingsActivity"
+            android:exported="true"
+            android:label="GPS Plugin Settings"
+            android:configChanges="orientation|screenSize">
+        </activity>
+
+        <service
+            android:name=".LoggerService"
+            android:exported="true"
+            android:label="Logger Service"
+            android:configChanges="orientation|screenSize">
+        </service>
+    </application>
+</manifest>

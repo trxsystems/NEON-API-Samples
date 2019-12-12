@@ -10,7 +10,7 @@ import android.graphics.Typeface;
 import android.os.Handler;
 import android.os.Looper;
 import android.speech.tts.TextToSpeech;
-import android.support.design.widget.BottomSheetBehavior;
+import com.google.android.material.bottomsheet.BottomSheetBehavior;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -56,7 +56,6 @@ import com.trx.neon.api.neonRouting.model.types.RouteInstructionType;
 import com.trx.neon.api.neonRouting.model.types.RouteState;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.ListIterator;
@@ -380,7 +379,7 @@ public class NeonRoutingAPIFunctions implements INeonRouteDestinationListener, I
      * minutesToDestination : minutes until the destinaton is reached
      */
     @Override
-    public void update(final String nextInstruction, final RouteInstructionType instructionType, final String nextNodeID, int metersToNextNode, RouteState routeState, Route route, List<NeonRouteDestination> list, int i, int i1) {
+    public void update(final String nextInstruction, final RouteInstructionType instructionType, boolean speakInstruction, final String nextNodeID, int metersToNextNode, RouteState routeState, Route route, List<NeonRouteDestination> list, int i, int i1) {
         if (bottomSheetState != BottomSheetState.IN_PROGRESS)
             return;
 
@@ -740,7 +739,7 @@ public class NeonRoutingAPIFunctions implements INeonRouteDestinationListener, I
                     directionView.setImageResource(R.drawable.ic_sharp_left);
                     break;
                 case SHARP_RIGHT:
-                    directionView.setImageResource(R.drawable.ic_slight_right);
+                    directionView.setImageResource(R.drawable.ic_sharp_right);
                     break;
                 case U_TURN:
                     directionView.setImageResource(R.drawable.ic_uturn);

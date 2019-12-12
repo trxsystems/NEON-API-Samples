@@ -9,7 +9,9 @@
     <string name="route_destination_title">Route To Destination</string>
     <string name="sync_title">Sync</string>
     <string name="route_settings_title">Route Filters</string>
-
+    <string name="google_maps_key" templateMergeStrategy="preserve" translatable="false">
+        AIzaSyAKzhU6n7vRJJhb6vEGUiPLKIgU0qQ54Tg
+    </string>
 
 </resources>
 
