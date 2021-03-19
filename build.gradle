@@ -20,7 +20,7 @@ allprojects {
         google()
         jcenter()
         maven {
-            url "https://trxsystems.bintray.com/maven"
+            url "https://www.myget.org/F/trxsystems/maven/"
         }
     }
 }

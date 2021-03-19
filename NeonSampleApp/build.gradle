@@ -20,7 +20,7 @@ android {
 dependencies {
     implementation fileTree(dir: 'libs', include: ['*.jar'])
 
-    implementation 'com.trxsystems.neon:android-api:3.0.0'
+    implementation 'com.trxsystems.neon:android-api:3.3.1'
 
     implementation 'com.google.android.material:material:1.0.0'
     implementation 'androidx.appcompat:appcompat:1.0.0'
