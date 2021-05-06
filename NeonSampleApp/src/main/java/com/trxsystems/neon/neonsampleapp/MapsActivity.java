@@ -20,7 +20,6 @@ import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.SupportMapFragment;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.LatLngBounds;
-import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.Polygon;
 import com.trx.neon.api.neon.Neon;
 import com.trx.neon.api.neon.model.NeonLocation;
@@ -29,6 +28,7 @@ import com.trx.neon.api.neonConstraint.model.ElevationInfo;
 import com.trx.neon.api.neonEnvironment.NeonEnvironment;
 import com.trx.neon.api.neonEnvironment.model.LatLong;
 import com.trx.neon.api.neonEnvironment.model.LatLongRect;
+import com.trx.neon.api.neonSettings.NeonSettings;
 
 import java.util.UUID;
 
@@ -65,7 +65,6 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
     //helper classes that exercise a particular API
     NeonAPIFunctions neonAPIFunctions;
     NeonEnvironmentAPIFunctions neonEnvironmentAPIFunctions;
-    NeonRoutingAPIFunctions neonRoutingAPIFunctions;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -122,7 +121,7 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
                     //if it is, apply a building and floor constraint
                     //otherwise, apply a user check-in at that location
                     if(!neonEnvironmentAPIFunctions.makeBuildingAndFloorCorrection(target))
-                        NeonConstraint.addUserCheckin(System.currentTimeMillis(), target.latitude, target.longitude, 1.0f, ElevationInfo.None());
+                        NeonConstraint.addUserCheckin(System.currentTimeMillis(), target.latitude, target.longitude, 1.0f, ElevationInfo.OnFloor(UUID.randomUUID(), 1));
                 }
             }
         });
@@ -137,7 +136,6 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
 
         neonAPIFunctions = new NeonAPIFunctions(this);
         neonEnvironmentAPIFunctions = new NeonEnvironmentAPIFunctions(this);
-        neonRoutingAPIFunctions = new NeonRoutingAPIFunctions(this);
     }
 
     @Override
@@ -145,7 +143,6 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
         super.onResume();
         neonAPIFunctions.onResume();
         neonEnvironmentAPIFunctions.onResume();
-        neonRoutingAPIFunctions.onResume();
     }
 
 
@@ -178,18 +175,10 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
 
         switch (id) {
             case R.id.action_settings:  //bring up the NEON Location Service Settings Page
-                Intent settingsIntent = new Intent(Neon.ACTIVITY_SETTINGS);
+                Intent settingsIntent = new Intent(NeonSettings.ACTIVITY_SETTINGS);
                 startActivity(settingsIntent);
                 return true;
 
-            case R.id.action_route_destination: {   //Bring up a list of route destinations
-                neonRoutingAPIFunctions.displayRouteDestinations();
-                break;
-            }
-            case R.id.action_route_settings: {      //Bring up a list of possible route filters
-                neonRoutingAPIFunctions.displayRouteSettings();
-                break;
-            }
             case R.id.action_sync: {          //sync the environment (re-download an updated set of data
 
                 final LatLngBounds viewingRect = googleMap.getProjection().getVisibleRegion().latLngBounds;
@@ -284,7 +273,6 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
                     googleMap.setMyLocationEnabled(true);
                     neonAPIFunctions.setBaseMap(googleMap);
                     neonEnvironmentAPIFunctions.setBaseMap(googleMap);
-                    neonRoutingAPIFunctions.setBaseMap(googleMap);
                 } else {
                     finish();
                 }
@@ -300,8 +288,6 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
             cancelUserCorrection();
             return;
         }
-        if(neonRoutingAPIFunctions.checkRouting())  //if currently routing, stop routing
-            return;
 
         shutdown();
         super.onBackPressed();  // optional depending on your needs
@@ -331,12 +317,10 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
             googleMap.setMyLocationEnabled(true);
             neonAPIFunctions.setBaseMap(googleMap);
             neonEnvironmentAPIFunctions.setBaseMap(googleMap);
-            neonRoutingAPIFunctions.setBaseMap(googleMap);
         }
 
         googleMap.setMapType(GoogleMap.MAP_TYPE_SATELLITE);
         googleMap.setOnPolygonClickListener(onPolygonClickListener);
-        googleMap.setOnMarkerClickListener(onMarkerClickListener);
         googleMap.getUiSettings().setMyLocationButtonEnabled(false);
 
         // sets camera move listener to track if user dragged map to stop following
@@ -358,20 +342,7 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
     private GoogleMap.OnPolygonClickListener onPolygonClickListener = new GoogleMap.OnPolygonClickListener() {
         @Override
         public void onPolygonClick(final Polygon polygon) {
-
             neonEnvironmentAPIFunctions.onPolygonClick(polygon);
-            neonRoutingAPIFunctions.onPolygonClick(polygon);
-        }
-    };
-
-    /**
-     * Handle clicks to markers on the map, such as points of interest
-     */
-    private GoogleMap.OnMarkerClickListener onMarkerClickListener = new GoogleMap.OnMarkerClickListener() {
-        @Override
-        public boolean onMarkerClick(Marker marker)
-        {
-            return neonRoutingAPIFunctions.onMarkerClick(marker);
         }
     };
 
@@ -401,7 +372,6 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
         {
             neonAPIFunctions.centerOnLocation(location);
             neonEnvironmentAPIFunctions.selectFloorAndBuilding(location);
-            neonRoutingAPIFunctions.selectOrientation(location);
         }
     }
 
@@ -411,7 +381,6 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
     public void startLoadingMapData()
     {
         neonEnvironmentAPIFunctions.startLoadingBuildings();
-        neonRoutingAPIFunctions.startLoadingRouteDestinations();
     }
 
     /**
@@ -420,7 +389,6 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
     public void clearMapData()
     {
         neonEnvironmentAPIFunctions.clearMapData();
-        neonRoutingAPIFunctions.clearMapData();
         googleMap.clear();
     }
 
@@ -446,7 +414,6 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
             public void run()
             {
                 neonEnvironmentAPIFunctions.drawOutline(buildingID, floor);
-                neonRoutingAPIFunctions.drawFloorContents(buildingID, floor);
             }
         });
 
@@ -460,7 +427,6 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
             shutdown = true;
             neonAPIFunctions.shutdown();
             neonEnvironmentAPIFunctions.shutdown();
-            neonRoutingAPIFunctions.shutdown();
             googleMap.clear();
             googleMap = null;
             locationListener = null;

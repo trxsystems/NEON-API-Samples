@@ -16,6 +16,7 @@ import com.trx.neon.api.neon.model.interfaces.INeonEvent;
 import com.trx.neon.api.neon.model.interfaces.INeonEventListener;
 import com.trx.neon.api.neon.model.interfaces.INeonLocationListener;
 import com.trx.neon.api.neon.model.types.NeonEventType;
+import com.trx.neon.api.neonSettings.NeonSettings;
 
 /**
  * NEON API Functions
@@ -125,8 +126,8 @@ public class NeonAPIFunctions implements INeonLocationListener, INeonEventListen
                 switch(be.isBound)
                 {
                     case CONNECT:   //prompt user to select tracking unit if they don't have one selected
-                        if(!Neon.hasTrackingUnit())
-                            Neon.startTrackingUnitActivityForResult(mapsActivity, MapsActivity.TRACKING_UNIT_REQUEST_CODE);
+                        if(!NeonSettings.hasTrackingUnit())
+                            NeonSettings.startTrackingUnitActivityForResult(mapsActivity, MapsActivity.TRACKING_UNIT_REQUEST_CODE);
                         break;
                     default:break;
                 }
@@ -137,8 +138,8 @@ public class NeonAPIFunctions implements INeonLocationListener, INeonEventListen
                     break;
                 switch (ae.getType())   //handle authentication by starting the login activity or upgrading the service
                 {
-                    case NO_CREDENTIALS_SET: Neon.startLoginActivityForResult(MapsActivity.LOGIN_ACTIVITY_REQUEST_CODE, mapsActivity); break;
-                    case MANDATORY_UPDATE_REQUIRED: Neon.upgradeNeonLocationServices(mapsActivity, MapsActivity.UPGRADE_ACTIVITY_REQUEST_CODE,true); break;
+                    case NO_CREDENTIALS_SET: NeonSettings.startLoginActivityForResult(MapsActivity.LOGIN_ACTIVITY_REQUEST_CODE, mapsActivity); break;
+                    case MANDATORY_UPDATE_REQUIRED: NeonSettings.upgradeNeonLocationServices(mapsActivity, MapsActivity.UPGRADE_ACTIVITY_REQUEST_CODE,true); break;
                     case UNRESOLVED_AUTHENTICATION_ERROR: Toast.makeText(mapsActivity.getApplicationContext(), "Error in login.  Please visit NEON Settings page to resolve errors",Toast.LENGTH_LONG).show(); break;
                     case SUCCESS:
                         Log.i(LOG_TAG, "successfully logged in to Neon Location Service");
@@ -152,7 +153,7 @@ public class NeonAPIFunctions implements INeonLocationListener, INeonEventListen
                 if(muae.getType() == null)
                     break;
                 if(muae.getType() == MandatoryUpdateAvailableEvent.MandatoryUpdateAvailableEventType.APPLICATION)
-                    Neon.upgradeNeonLocationServices(mapsActivity, MapsActivity.UPGRADE_ACTIVITY_REQUEST_CODE, true);
+                    NeonSettings.upgradeNeonLocationServices(mapsActivity, MapsActivity.UPGRADE_ACTIVITY_REQUEST_CODE, true);
                 break;
             default: break;
         }
