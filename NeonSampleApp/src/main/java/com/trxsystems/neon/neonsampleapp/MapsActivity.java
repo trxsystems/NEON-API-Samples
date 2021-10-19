@@ -205,9 +205,11 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
                     case Activity.RESULT_CANCELED:
                         Log.i(LOG_TAG, "login was canceled, closing activity");
                         neonAPIFunctions.stopLocationService();
+                        neonAPIFunctions.loggingIn = false;
                         finish();
                     case Activity.RESULT_OK:
                         Log.i(LOG_TAG, "login information was successfully entered");
+                        neonAPIFunctions.loggingIn = false;
                         break;
                     default:
                         break;

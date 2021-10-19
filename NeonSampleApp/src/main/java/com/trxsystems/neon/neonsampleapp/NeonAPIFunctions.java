@@ -29,6 +29,7 @@ public class NeonAPIFunctions implements INeonLocationListener, INeonEventListen
 
     private MapsActivity mapsActivity;
     private GoogleMap baseMap;
+    public boolean loggingIn = false;
 
     NeonAPIFunctions(MapsActivity mapsActivity)
     {
@@ -138,7 +139,13 @@ public class NeonAPIFunctions implements INeonLocationListener, INeonEventListen
                     break;
                 switch (ae.getType())   //handle authentication by starting the login activity or upgrading the service
                 {
-                    case NO_CREDENTIALS_SET: NeonSettings.startLoginActivityForResult(MapsActivity.LOGIN_ACTIVITY_REQUEST_CODE, mapsActivity); break;
+                    case NO_CREDENTIALS_SET:
+                        if(!loggingIn)
+                        {
+                            NeonSettings.startLoginActivityForResult(MapsActivity.LOGIN_ACTIVITY_REQUEST_CODE, mapsActivity);
+                            loggingIn = true;
+                        }
+                        break;
                     case MANDATORY_UPDATE_REQUIRED: NeonSettings.upgradeNeonLocationServices(mapsActivity, MapsActivity.UPGRADE_ACTIVITY_REQUEST_CODE,true); break;
                     case UNRESOLVED_AUTHENTICATION_ERROR: Toast.makeText(mapsActivity.getApplicationContext(), "Error in login.  Please visit NEON Settings page to resolve errors",Toast.LENGTH_LONG).show(); break;
                     case SUCCESS:
